@@ -10,7 +10,6 @@ axios.interceptors.request.use(
         return config;
     },
     (error) => {
-        console.log('qwer');
         return Promise.reject(error);
     }
 );
@@ -44,7 +43,7 @@ axios.interceptors.response.use(
             throw new Error(error);
         }
 
-        await axios.post('logout');
+        // await axios.post('logout');
 
         return Promise.reject(error.message);
     }

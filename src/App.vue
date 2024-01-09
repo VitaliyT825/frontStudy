@@ -1,10 +1,9 @@
 <template>
-    <Nav :user="user"/>
-
     <div id="app">
+        <Nav />
         <div class="auth-wrapper">
             <div class="auth-inner">
-                <router-view :user="user"/>
+                <router-view />
             </div>
         </div>
     </div>
@@ -19,20 +18,15 @@
         components: {
             Nav,
         },
-        data() {
-            return  {
-                user: null
-            }
-        },
         async created () {
             try {
                 const res = await axios.get('profile');
-                this.user = res.data;
+
+                this.$store.dispatch('user', res.data);
             } catch (e) {
                 this.user = null;
             }
-
-        }
+        },
     }
 </script>
 

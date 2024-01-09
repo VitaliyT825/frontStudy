@@ -36,6 +36,7 @@
                         'password': this.password,
                     })
 
+                    // await this.$store.dispatch('user', data);
                     authService.setAuthToken(data.token);
                     this.$router.push('/');
                 } catch (e) {

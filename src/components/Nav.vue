@@ -24,17 +24,21 @@
 <script>
     import {authService} from "@/services/auth.service";
     import axios from "axios";
+    import {mapGetters} from "vuex";
 
     export default {
         name: 'NavItem',
-        props: ['user'],
         methods: {
             async handleClick() {
                 await axios.post('logout');
                 authService.removeAuthToken();
+                this.$store.dispatch('user', null)
 
                 this.$router.push('/');
             }
+        },
+        computed: {
+            ...mapGetters(['user'])
         }
     }
 </script>
