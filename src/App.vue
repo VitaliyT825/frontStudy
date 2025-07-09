@@ -2,7 +2,10 @@
     <div id="app">
         <Nav />
         <div class="auth-wrapper">
-            <div class="auth-inner">
+            <div v-if="isFullWidthPage" class="full-width-content">
+                <router-view />
+            </div>
+            <div v-else class="auth-inner">
                 <router-view />
             </div>
         </div>
@@ -17,6 +20,13 @@
         name: 'App',
         components: {
             Nav,
+        },
+        computed: {
+            isFullWidthPage() {
+                // Список страниц, которые должны использовать полную ширину
+                const fullWidthPages = ['prices'];
+                return fullWidthPages.includes(this.$route.name);
+            }
         },
         async created () {
             try {
@@ -79,6 +89,16 @@
         padding: 40px 55px 45px 55px;
         border-radius: 15px;
         transition: all .3s;
+    }
+
+    .full-width-content {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+        border-radius: 0;
     }
 
     .form-group {

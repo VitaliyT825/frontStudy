@@ -143,7 +143,6 @@
         min-height: 100vh;
         background-color: #f8f9fa;
         padding: 20px;
-        margin: -40px -55px -45px -55px; /* Убираем отступы от auth-inner */
     }
 
     .prices-header {
@@ -325,7 +324,6 @@
     @media (max-width: 1024px) {
         .prices-page {
             padding: 15px;
-            margin: -40px -55px -45px -55px;
         }
 
         .prices-header {
@@ -341,7 +339,6 @@
     @media (max-width: 768px) {
         .prices-page {
             padding: 10px;
-            margin: -40px -55px -45px -55px;
         }
 
         .prices-header {
