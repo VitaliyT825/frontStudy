@@ -13,6 +13,9 @@
                 </ul>
                 <ul class="navbar-nav ml-auto" v-if="user">
                     <li class="nav-item">
+                        <router-link to="/prices" class="nav-link">Prices</router-link>
+                    </li>
+                    <li class="nav-item">
                         <a href="javascript:void(0)" @click="handleClick" class="nav-link">Logout</a>
                     </li>
                 </ul>
