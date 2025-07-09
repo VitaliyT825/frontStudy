@@ -19,6 +19,7 @@ export default {
         min-height: 100vh;
         display: flex;
         flex-direction: column;
+        padding-top: 80px; /* Отступ для фиксированной навигации */
     }
 
     .auth-wrapper {

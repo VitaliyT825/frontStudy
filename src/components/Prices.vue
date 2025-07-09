@@ -140,7 +140,7 @@
 
 <style scoped>
     .prices-page {
-        min-height: 100vh;
+        min-height: calc(100vh - 80px); /* Вычитаем высоту навигации */
         padding: 20px;
     }
 
