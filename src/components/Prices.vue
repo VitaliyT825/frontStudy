@@ -1,9 +1,11 @@
 <template>
-    <div>
-        <h3>Prices</h3>
-        <div v-if="user">
-            <p>Welcome, {{user.name}}!</p>
+    <div class="prices-page">
+        <div class="prices-header">
+            <h2>Product Prices</h2>
+            <p v-if="user" class="welcome-text">Welcome, {{user.name}}!</p>
+        </div>
 
+        <div v-if="user" class="prices-content">
             <!-- Индикатор загрузки -->
             <div v-if="loading" class="loading">
                 <p>Loading prices...</p>
@@ -20,6 +22,7 @@
                 <table class="prices-table">
                     <thead>
                         <tr>
+                            <th>Image</th>
                             <th>Product</th>
                             <th>Description</th>
                             <th>Base Price 1</th>
@@ -32,6 +35,20 @@
                     </thead>
                     <tbody>
                         <tr v-for="item in prices" :key="item.product">
+                            <td class="image-cell">
+                                <div class="image-container">
+                                    <img
+                                        v-if="item.image && item.image.trim()"
+                                        :src="item.image"
+                                        :alt="item.product"
+                                        class="product-image"
+                                        @error="handleImageError"
+                                    />
+                                    <div v-else class="no-image">
+                                        <span>No image</span>
+                                    </div>
+                                </div>
+                            </td>
                             <td class="product-name">{{item.product}}</td>
                             <td class="description">{{item.description}}</td>
                             <td class="price">{{formatPrice(item.basePrice[0])}}</td>
@@ -50,7 +67,8 @@
                 <p>No prices available</p>
             </div>
         </div>
-        <div v-else>
+
+        <div v-else class="login-prompt">
             <p>Please log in to view prices.</p>
         </div>
     </div>
@@ -97,6 +115,12 @@
                     return '-';
                 }
                 return `$${price}`;
+            },
+            handleImageError(event) {
+                console.warn('Failed to load image:', event.target.src);
+                // Заменяем сломанное изображение на placeholder
+                event.target.style.display = 'none';
+                event.target.nextElementSibling.style.display = 'flex';
             }
         },
         async mounted() {
@@ -115,18 +139,54 @@
 </script>
 
 <style scoped>
+    .prices-page {
+        min-height: 100vh;
+        background-color: #f8f9fa;
+        padding: 20px;
+        margin: -40px -55px -45px -55px; /* Убираем отступы от auth-inner */
+    }
+
+    .prices-header {
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    .prices-header h2 {
+        margin: 0 0 10px 0;
+        color: #333;
+        font-size: 28px;
+    }
+
+    .welcome-text {
+        margin: 0;
+        color: #666;
+        font-size: 16px;
+    }
+
+    .prices-content {
+        background-color: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
     .loading {
         text-align: center;
-        padding: 20px;
+        padding: 40px;
         color: #666;
+        font-size: 18px;
     }
 
     .error {
         background-color: #ffe6e6;
         border: 1px solid #ffcccc;
         color: #cc0000;
-        padding: 15px;
-        border-radius: 5px;
+        padding: 20px;
+        border-radius: 8px;
         margin: 20px 0;
         text-align: center;
     }
@@ -135,10 +195,11 @@
         background-color: #167bff;
         color: white;
         border: none;
-        padding: 8px 16px;
-        border-radius: 4px;
+        padding: 10px 20px;
+        border-radius: 5px;
         cursor: pointer;
-        margin-top: 10px;
+        margin-top: 15px;
+        font-size: 14px;
     }
 
     .retry-btn:hover {
@@ -147,77 +208,176 @@
 
     .no-data {
         text-align: center;
-        padding: 20px;
+        padding: 40px;
         color: #666;
         font-style: italic;
+        font-size: 18px;
+    }
+
+    .login-prompt {
+        background-color: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        text-align: center;
+        font-size: 18px;
+        color: #666;
     }
 
     .table-container {
         margin-top: 20px;
         overflow-x: auto;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
 
     .prices-table {
         width: 100%;
         border-collapse: collapse;
         background-color: white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-radius: 8px;
-        overflow: hidden;
+        min-width: 800px; /* Минимальная ширина для горизонтального скролла */
     }
 
     .prices-table th {
         background-color: #167bff;
         color: white;
-        padding: 12px 8px;
+        padding: 15px 12px;
         text-align: left;
         font-weight: 600;
         font-size: 14px;
+        white-space: nowrap;
     }
 
     .prices-table td {
-        padding: 12px 8px;
+        padding: 15px 12px;
         border-bottom: 1px solid #eee;
         font-size: 14px;
+        vertical-align: middle;
     }
 
     .prices-table tr:hover {
         background-color: #f8f9fa;
     }
 
+    .prices-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .image-cell {
+        width: 80px;
+        text-align: center;
+    }
+
+    .image-container {
+        position: relative;
+        width: 60px;
+        height: 60px;
+        margin: 0 auto;
+    }
+
+    .product-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 2px solid #e9ecef;
+    }
+
+    .no-image {
+        width: 100%;
+        height: 100%;
+        background-color: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        color: #6c757d;
+        text-align: center;
+    }
+
     .product-name {
         font-weight: 600;
         color: #333;
+        min-width: 120px;
     }
 
     .description {
         color: #666;
-        max-width: 200px;
+        max-width: 250px;
+        line-height: 1.4;
     }
 
     .price {
         font-weight: 500;
         text-align: right;
         color: #167bff;
+        min-width: 80px;
+        font-family: 'Courier New', monospace;
     }
 
     .price:contains('-') {
         color: #999;
     }
 
+    /* Адаптивность для планшетов */
+    @media (max-width: 1024px) {
+        .prices-page {
+            padding: 15px;
+            margin: -40px -55px -45px -55px;
+        }
+
+        .prices-header {
+            padding: 20px;
+        }
+
+        .prices-content {
+            padding: 20px;
+        }
+    }
+
     /* Адаптивность для мобильных устройств */
     @media (max-width: 768px) {
+        .prices-page {
+            padding: 10px;
+            margin: -40px -55px -45px -55px;
+        }
+
+        .prices-header {
+            padding: 15px;
+        }
+
+        .prices-header h2 {
+            font-size: 24px;
+        }
+
+        .prices-content {
+            padding: 15px;
+        }
+
         .prices-table {
             font-size: 12px;
+            min-width: 600px;
         }
 
         .prices-table th,
         .prices-table td {
-            padding: 8px 4px;
+            padding: 10px 6px;
+        }
+
+        .image-container {
+            width: 40px;
+            height: 40px;
         }
 
         .description {
             max-width: 150px;
+            font-size: 11px;
+        }
+
+        .price {
+            font-size: 12px;
         }
     }
 </style>
