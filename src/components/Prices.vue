@@ -73,28 +73,21 @@
             ...mapGetters(['user'])
         },
         methods: {
-            async loadPrices() {
+                                                async loadPrices() {
                 this.loading = true;
                 this.error = null;
 
                 try {
-                    // Сначала пробуем основной backend, потом мок
-                    let response;
-                    try {
-                        response = await axios.get('http://localhost:8080/backofficeapi/shopA/product');
-                    } catch (backendError) {
-                        console.log('Backend недоступен, используем мок:', backendError.message);
-                        response = await axios.get('https://2b635504-dc32-46bf-863b-aa5f05e78e4b.mock.pstmn.io/backofficeapi/shopA/product');
-                    }
-
-                    if (response.data.code === 0) {
-                        this.prices = response.data.data;
-                    } else {
-                        this.error = response.data.message || 'Unknown error';
-                    }
+                    console.log('Загружаем данные с backend...');
+                    // Axios interceptor автоматически обрабатывает ответ
+                    const data = await axios.get('shopA/product');
+                    console.log('Backend ответил:', data);
+                    // Interceptor уже проверил code и вернул data.data
+                    this.prices = data.data || [];
+                    console.log('Данные загружены успешно:', this.prices);
                 } catch (error) {
                     console.error('Error loading prices:', error);
-                    this.error = error.message || 'Failed to load prices';
+                    this.error = error || 'Failed to load prices';
                 } finally {
                     this.loading = false;
                 }
