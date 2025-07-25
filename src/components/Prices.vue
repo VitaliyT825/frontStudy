@@ -20,8 +20,16 @@
                         <!-- Карточки товаров -->
             <div v-if="!loading && !error && prices.length > 0" class="cards-container">
                 <div v-for="item in prices" :key="item.product" class="product-card">
-                    <!-- Название товара -->
-                    <h3 class="product-title">{{item.product}}</h3>
+                    <!-- Заголовок с названием и кнопкой редактирования -->
+                    <div class="card-header">
+                        <h3 class="product-title">{{item.product}}</h3>
+                        <button @click="openEditModal(item)" class="edit-btn" title="Редактировать">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="m18.5 2.5 a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
 
                     <!-- Изображение товара -->
                     <div class="card-image-container">
@@ -86,7 +94,7 @@
                 </div>
             </div>
 
-            <!-- Сообщение, если нет данных -->
+                        <!-- Сообщение, если нет данных -->
             <div v-if="!loading && !error && prices.length === 0" class="no-data">
                 <p>No prices available</p>
             </div>
@@ -94,6 +102,66 @@
 
         <div v-else class="login-prompt">
             <p>Please log in to view prices.</p>
+        </div>
+
+        <!-- Модальное окно редактирования -->
+        <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
+            <div class="modal-content" @click.stop>
+                <div class="modal-header">
+                    <h4>Редактировать товар</h4>
+                    <button @click="closeEditModal" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Отображение ошибки -->
+                    <div v-if="error" class="modal-error">
+                        <p>{{error}}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="productName">Название:</label>
+                        <input
+                            type="text"
+                            id="productName"
+                            v-model="editForm.name"
+                            class="form-input"
+                            placeholder="Введите название товара"
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="productDescription">Описание (100 символов):</label>
+                        <textarea
+                            id="productDescription"
+                            v-model="editForm.description"
+                            class="form-textarea"
+                            maxlength="100"
+                            placeholder="Введите описание товара"
+                            rows="3"
+                        ></textarea>
+                        <small class="char-counter">{{editForm.description.length}}/100</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="productPrice">Цена:</label>
+                        <input
+                            type="number"
+                            id="productPrice"
+                            v-model="editForm.price"
+                            class="form-input"
+                            placeholder="Введите цену"
+                            min="0"
+                            step="0.01"
+                        />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button @click="closeEditModal" class="btn-cancel" :disabled="loading">Отмена</button>
+                    <button @click="saveProduct" class="btn-save" :disabled="loading">
+                        <span v-if="loading">Сохранение...</span>
+                        <span v-else>Сохранить</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -108,7 +176,14 @@
             return {
                 prices: [],
                 loading: false,
-                error: null
+                error: null,
+                showEditModal: false,
+                editForm: {
+                    name: '',
+                    description: '',
+                    price: 0
+                },
+                currentEditItem: null
             }
         },
         computed: {
@@ -151,6 +226,89 @@
                 // Заменяем сломанное изображение на placeholder
                 event.target.style.display = 'none';
                 event.target.nextElementSibling.style.display = 'flex';
+            },
+            openEditModal(item) {
+                this.currentEditItem = item;
+                this.editForm.name = item.product;
+                this.editForm.description = item.description;
+                this.editForm.price = item.basePrice[0] || 0; // Берем первую базовую цену
+                this.showEditModal = true;
+            },
+            closeEditModal() {
+                this.showEditModal = false;
+                this.currentEditItem = null;
+                this.error = null;
+                this.editForm = {
+                    name: '',
+                    description: '',
+                    price: 0
+                };
+            },
+            async saveProduct() {
+                if (!this.currentEditItem || !this.currentEditItem.productId) {
+                    console.error('Нет данных о редактируемом товаре');
+                    return;
+                }
+
+                // Валидация формы
+                if (!this.editForm.name.trim()) {
+                    this.error = 'Название товара не может быть пустым';
+                    return;
+                }
+
+                if (!this.editForm.description.trim()) {
+                    this.error = 'Описание товара не может быть пустым';
+                    return;
+                }
+
+                if (!this.editForm.price || this.editForm.price <= 0) {
+                    this.error = 'Цена должна быть больше 0';
+                    return;
+                }
+
+                try {
+                    // Показываем состояние загрузки
+                    this.loading = true;
+                    this.error = null;
+
+                    // Подготавливаем данные для отправки
+                    const updateData = {
+                        productName: this.editForm.name,
+                        description: this.editForm.description,
+                        price: this.editForm.price.toString()
+                    };
+
+                    console.log('Отправляем PUT запрос:', updateData);
+
+                    // Отправляем PUT запрос
+                    const response = await axios.put(
+                        `shopA/product/${this.currentEditItem.productId}`,
+                        updateData
+                    );
+
+                    console.log('Ответ сервера:', response);
+
+                    // Обновляем данные в локальном массиве
+                    const itemIndex = this.prices.findIndex(p => p.productId === this.currentEditItem.productId);
+                    if (itemIndex !== -1) {
+                        // Обновляем локальные данные
+                        this.prices[itemIndex].product = this.editForm.name;
+                        this.prices[itemIndex].description = this.editForm.description;
+                        // Обновляем первую базовую цену
+                        this.prices[itemIndex].basePrice[0] = this.editForm.price.toString();
+                    }
+
+                    // Закрываем модальное окно
+                    this.closeEditModal();
+
+                    console.log('Товар успешно обновлен');
+
+                } catch (error) {
+                    console.error('Ошибка при сохранении товара:', error);
+                    this.error = error.message || 'Ошибка при сохранении товара';
+                } finally {
+                    this.loading = false;
+                }
             }
         },
         async mounted() {
@@ -277,11 +435,37 @@
         box-shadow: 0 6px 16px rgba(0,0,0,0.15);
     }
 
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+
     .product-title {
-        margin: 0 0 15px 0;
+        margin: 0;
         color: #333;
         font-size: 18px;
         font-weight: 600;
+        flex: 1;
+    }
+
+    .edit-btn {
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        margin-left: 8px;
+        flex-shrink: 0;
+    }
+
+    .edit-btn:hover {
+        background-color: #f0f0f0;
+        color: #167bff;
+        transform: scale(1.1);
     }
 
     .card-image-container {
@@ -459,5 +643,180 @@
         .cards-container {
             grid-template-columns: 1fr;
         }
+    }
+
+    /* Стили для модального окна */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 20px 0 20px;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 20px;
+    }
+
+    .modal-header h4 {
+        margin: 0;
+        color: #333;
+        font-size: 18px;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+    }
+
+    .close-btn:hover {
+        background-color: #f0f0f0;
+        color: #333;
+    }
+
+    .modal-body {
+        padding: 0 20px 20px 20px;
+    }
+
+    .modal-error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+    }
+
+    .modal-error p {
+        margin: 0;
+        font-size: 14px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .form-input,
+    .form-textarea {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #e9ecef;
+        border-radius: 5px;
+        font-size: 14px;
+        transition: border-color 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+        outline: none;
+        border-color: #167bff;
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .char-counter {
+        display: block;
+        text-align: right;
+        color: #666;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 0 20px 20px 20px;
+        border-top: 1px solid #eee;
+        margin-top: 20px;
+        padding-top: 20px;
+    }
+
+    .btn-cancel {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s ease;
+    }
+
+    .btn-cancel:hover {
+        background-color: #5a6268;
+    }
+
+    .btn-save {
+        background-color: #167bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s ease;
+    }
+
+    .btn-save:hover {
+        background-color: #0056b3;
+    }
+
+    .btn-cancel:disabled,
+    .btn-save:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-cancel:disabled:hover,
+    .btn-save:disabled:hover {
+        background-color: #6c757d;
+    }
+
+    .btn-save:disabled:hover {
+        background-color: #167bff;
     }
 </style>
