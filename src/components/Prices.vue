@@ -17,49 +17,73 @@
                 <button @click="loadPrices" class="retry-btn">Retry</button>
             </div>
 
-            <!-- Таблица с данными -->
-            <div v-if="!loading && !error && prices.length > 0" class="table-container">
-                <table class="prices-table">
-                    <thead>
-                        <tr>
-                            <th>Image</th>
-                            <th>Product</th>
-                            <th>Description</th>
-                            <th>Base Price 1</th>
-                            <th>Base Price 2</th>
-                            <th>Base Price 3</th>
-                            <th>Option Price 1</th>
-                            <th>Option Price 2</th>
-                            <th>Option Price 3</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="item in prices" :key="item.product">
-                            <td class="image-cell">
-                                <div class="image-container">
-                                    <img
-                                        v-if="item.image && item.image.trim()"
-                                        :src="item.image"
-                                        :alt="item.product"
-                                        class="product-image"
-                                        @error="handleImageError"
-                                    />
-                                    <div v-else class="no-image">
-                                        <span>No image</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="product-name">{{item.product}}</td>
-                            <td class="description">{{item.description}}</td>
-                            <td class="price">{{formatPrice(item.basePrice[0])}}</td>
-                            <td class="price">{{formatPrice(item.basePrice[1])}}</td>
-                            <td class="price">{{formatPrice(item.basePrice[2])}}</td>
-                            <td class="price">{{formatPrice(item.optionPrice[0])}}</td>
-                            <td class="price">{{formatPrice(item.optionPrice[1])}}</td>
-                            <td class="price">{{formatPrice(item.optionPrice[2])}}</td>
-                        </tr>
-                    </tbody>
-                </table>
+                        <!-- Карточки товаров -->
+            <div v-if="!loading && !error && prices.length > 0" class="cards-container">
+                <div v-for="item in prices" :key="item.product" class="product-card">
+                    <!-- Название товара -->
+                    <h3 class="product-title">{{item.product}}</h3>
+
+                    <!-- Изображение товара -->
+                    <div class="card-image-container">
+                        <img
+                            v-if="item.image && item.image.trim()"
+                            :src="item.image"
+                            :alt="item.product"
+                            class="card-product-image"
+                            @error="handleImageError"
+                        />
+                        <div v-else class="card-no-image">
+                            <span>No image</span>
+                        </div>
+                    </div>
+
+                    <!-- Новая цена (Base Price) -->
+                    <span class="spanoran">Новая</span>
+                    <div class="price-table-container">
+                        <table class="tabprice">
+                            <thead>
+                                <tr>
+                                    <th>Base Price 1</th>
+                                    <th>Base Price 2</th>
+                                    <th>Base Price 3</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td :class="{'green-price': item.basePrice[0]}">{{formatPriceRub(item.basePrice[0])}}</td>
+                                    <td>{{formatPriceRub(item.basePrice[1])}}</td>
+                                    <td>{{formatPriceRub(item.basePrice[2])}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <br>
+
+                    <!-- Старая цена (Option Price) -->
+                    <span class="spanred">Старая</span>
+                    <div class="price-table-container">
+                        <table class="tabprice">
+                            <thead>
+                                <tr>
+                                    <th>Option Price 1</th>
+                                    <th>Option Price 2</th>
+                                    <th>Option Price 3</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td :class="{'green-price': item.optionPrice[0]}">{{formatPriceRub(item.optionPrice[0])}}</td>
+                                    <td>{{formatPriceRub(item.optionPrice[1])}}</td>
+                                    <td>{{formatPriceRub(item.optionPrice[2])}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                                        <!-- Описание -->
+                    <div class="product-description">{{item.description}}</div>
+                </div>
             </div>
 
             <!-- Сообщение, если нет данных -->
@@ -115,6 +139,12 @@
                     return '-';
                 }
                 return `$${price}`;
+            },
+            formatPriceRub(price) {
+                if (price === null || price === undefined) {
+                    return '-';
+                }
+                return `${price} р.`;
             },
             handleImageError(event) {
                 console.warn('Failed to load image:', event.target.src);
@@ -222,102 +252,133 @@
         color: #666;
     }
 
-    .table-container {
+    .cards-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
         margin-top: 20px;
-        overflow-x: auto;
+        max-width: 1200px; /* Ограничиваем максимальную ширину для 4 карточек */
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .product-card {
+        background: white;
         border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-
-    .prices-table {
-        width: 100%;
-        border-collapse: collapse;
-        background-color: white;
-        min-width: 800px; /* Минимальная ширина для горизонтального скролла */
-    }
-
-    .prices-table th {
-        background-color: #167bff;
-        color: white;
-        padding: 15px 12px;
-        text-align: left;
-        font-weight: 600;
-        font-size: 14px;
-        white-space: nowrap;
-    }
-
-    .prices-table td {
-        padding: 15px 12px;
-        border-bottom: 1px solid #eee;
-        font-size: 14px;
-        vertical-align: middle;
-    }
-
-    .prices-table tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    .prices-table tr:last-child td {
-        border-bottom: none;
-    }
-
-    .image-cell {
-        width: 80px;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         text-align: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: 1px solid #e9ecef;
     }
 
-    .image-container {
-        position: relative;
-        width: 60px;
-        height: 60px;
-        margin: 0 auto;
+    .product-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.15);
     }
 
-    .product-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+    .product-title {
+        margin: 0 0 15px 0;
+        color: #333;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .card-image-container {
+        margin-bottom: 15px;
+        height: 110px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card-product-image {
+        max-width: 100%;
+        max-height: 110px;
+        object-fit: contain;
         border-radius: 6px;
-        border: 2px solid #e9ecef;
     }
 
-    .no-image {
+    .card-no-image {
         width: 100%;
-        height: 100%;
+        height: 110px;
         background-color: #f8f9fa;
         border: 2px dashed #dee2e6;
         border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 10px;
+        font-size: 12px;
         color: #6c757d;
-        text-align: center;
     }
 
-    .product-name {
+    .spanoran {
+        background-color: #ffa000;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
         font-weight: 600;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+
+    .spanred {
+        background-color: #d32f2f;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+
+    .price-table-container {
+        margin-bottom: 15px;
+    }
+
+    .tabprice {
+        width: 100%;
+        border-collapse: collapse;
+        border: 2px solid white;
+        font-size: 11px;
+        margin: 5px 0;
+        padding: 0px;
+    }
+
+    .tabprice th {
+        padding: 3px;
+        border: 1px solid maroon;
+        text-align: center;
+        font-weight: bold;
+        font-size: 10px;
         color: #333;
-        min-width: 120px;
+        background-color: #f5f5f5;
+        display: table-cell;
+        vertical-align: inherit;
     }
 
-    .description {
-        color: #666;
-        max-width: 250px;
-        line-height: 1.4;
+    .tabprice td {
+        padding: 3px;
+        border: 1px solid maroon;
+        text-align: center;
+        font-size: 11px;
     }
 
-    .price {
-        font-weight: 500;
-        text-align: right;
-        color: #167bff;
-        min-width: 80px;
-        font-family: 'Courier New', monospace;
+    .green-price {
+        color: green !important;
+        font-weight: 600;
     }
 
-    .price:contains('-') {
-        color: #999;
+    .product-description {
+        color: #ffa000;
+        font-size: 12px;
+        margin: 10px 0;
+        min-height: 20px;
     }
+
+
 
     /* Адаптивность для планшетов */
     @media (max-width: 1024px) {
@@ -331,6 +392,10 @@
 
         .prices-content {
             padding: 20px;
+        }
+
+        .cards-container {
+            grid-template-columns: repeat(2, 1fr);
         }
     }
 
@@ -352,28 +417,47 @@
             padding: 15px;
         }
 
-        .prices-table {
-            font-size: 12px;
-            min-width: 600px;
+        .cards-container {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
         }
 
-        .prices-table th,
-        .prices-table td {
-            padding: 10px 6px;
+        .product-card {
+            padding: 15px;
         }
 
-        .image-container {
-            width: 40px;
-            height: 40px;
+        .product-title {
+            font-size: 16px;
         }
 
-        .description {
-            max-width: 150px;
-            font-size: 11px;
+        .card-image-container {
+            height: 90px;
         }
 
-        .price {
-            font-size: 12px;
+        .card-product-image {
+            max-height: 90px;
+        }
+
+        .card-no-image {
+            height: 90px;
+        }
+
+        .tabprice {
+            font-size: 10px;
+        }
+
+        .tabprice th,
+        .tabprice td {
+            padding: 2px;
+            font-size: 9px;
+            border: 1px solid maroon;
+        }
+    }
+
+    /* Для очень маленьких экранов - по 1 карточке */
+    @media (max-width: 480px) {
+        .cards-container {
+            grid-template-columns: 1fr;
         }
     }
 </style>
