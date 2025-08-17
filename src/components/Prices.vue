@@ -117,6 +117,14 @@
                         <p>{{error}}</p>
                     </div>
 
+                    <!-- Компонент загрузки изображения -->
+                    <ImageUpload
+                        :initial-image="editForm.imageUrl"
+                        :initial-image-id="editForm.imageFileId"
+                        @image-uploaded="onImageUploaded"
+                        @image-removed="onImageRemoved"
+                    />
+
                     <div class="form-group">
                         <label for="productName">Название:</label>
                         <input
@@ -169,9 +177,14 @@
 <script>
     import {mapGetters} from "vuex";
     import axios from "axios";
+    import ImageUpload from "./ImageUpload.vue";
+    import { fileService } from "@/services/file.service";
 
     export default {
         name: 'PricesItem',
+        components: {
+            ImageUpload
+        },
         data() {
             return {
                 prices: [],
@@ -181,7 +194,9 @@
                 editForm: {
                     name: '',
                     description: '',
-                    price: 0
+                    price: 0,
+                    imageUrl: null,
+                    imageFileId: null
                 },
                 currentEditItem: null
             }
@@ -200,8 +215,35 @@
                     const data = await axios.get('shopA/product');
                     console.log('Backend ответил:', data);
                     // Interceptor уже проверил code и вернул data.data
-                    this.prices = data.data || [];
-                    console.log('Данные загружены успешно:', this.prices);
+                    const products = data.data || [];
+                    console.log('Данные товаров загружены:', products);
+
+                    // Собираем все imageId для загрузки путей к изображениям
+                    const imageIds = products
+                        .map(product => product.imageId)
+                        .filter(id => id && id !== null);
+
+                    console.log('Найденные imageId для загрузки:', imageIds);
+
+                    // Параллельно загружаем пути к изображениям
+                    let imagePaths = {};
+                    if (imageIds.length > 0) {
+                        try {
+                            imagePaths = await fileService.getMultipleFilePaths(imageIds);
+                            console.log('Пути к изображениям загружены:', imagePaths);
+                        } catch (error) {
+                            console.warn('Ошибка при загрузке путей к изображениям:', error);
+                            // Продолжаем без изображений, если их загрузка не удалась
+                        }
+                    }
+
+                    // Обогащаем данные товаров путями к изображениям
+                    this.prices = products.map(product => ({
+                        ...product,
+                        image: product.imageId ? imagePaths[product.imageId] || null : null
+                    }));
+
+                    console.log('Финальные данные с изображениями:', this.prices);
                 } catch (error) {
                     console.error('Error loading prices:', error);
                     this.error = error || 'Failed to load prices';
@@ -232,6 +274,8 @@
                 this.editForm.name = item.product;
                 this.editForm.description = item.description;
                 this.editForm.price = item.basePrice[0] || 0; // Берем первую базовую цену
+                this.editForm.imageUrl = item.image || null;
+                this.editForm.imageFileId = item.imageId || null; // Используем imageId из API
                 this.showEditModal = true;
             },
             closeEditModal() {
@@ -241,7 +285,9 @@
                 this.editForm = {
                     name: '',
                     description: '',
-                    price: 0
+                    price: 0,
+                    imageUrl: null,
+                    imageFileId: null
                 };
             },
             async saveProduct() {
@@ -275,7 +321,8 @@
                     const updateData = {
                         productName: this.editForm.name,
                         description: this.editForm.description,
-                        price: this.editForm.price.toString()
+                        price: this.editForm.price.toString(),
+                        imageFileId: this.editForm.imageFileId || null
                     };
 
                     console.log('Отправляем PUT запрос:', updateData);
@@ -296,6 +343,9 @@
                         this.prices[itemIndex].description = this.editForm.description;
                         // Обновляем первую базовую цену
                         this.prices[itemIndex].basePrice[0] = this.editForm.price.toString();
+                        // Обновляем информацию об изображении
+                        this.prices[itemIndex].imageId = this.editForm.imageFileId;
+                        this.prices[itemIndex].image = this.editForm.imageUrl;
                     }
 
                     // Закрываем модальное окно
@@ -309,6 +359,20 @@
                 } finally {
                     this.loading = false;
                 }
+            },
+
+            // Обработчик успешной загрузки изображения
+            onImageUploaded(imageData) {
+                console.log('Изображение загружено:', imageData);
+                this.editForm.imageFileId = imageData.imageId;
+                this.editForm.imageUrl = imageData.imagePath;
+            },
+
+            // Обработчик удаления изображения
+            onImageRemoved() {
+                console.log('Изображение удалено');
+                this.editForm.imageFileId = null;
+                this.editForm.imageUrl = null;
             }
         },
         async mounted() {
