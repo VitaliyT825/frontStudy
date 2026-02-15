@@ -3,6 +3,7 @@ import Home from "@/components/Home.vue";
 import Login from "@/components/Login.vue";
 import Register from "@/components/Register.vue";
 import Prices from "@/components/Prices.vue";
+import GoogleCallback from "@/components/GoogleCallback.vue";
 import AuthLayout from "@/layouts/AuthLayout.vue";
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import {authService} from "@/services/auth.service";
@@ -29,6 +30,14 @@ const routes = [
         component: AuthLayout,
         children: [
             {path: '', component: Register}
+        ]
+    },
+    {
+        path: '/auth/google/callback',
+        name: 'google-callback',
+        component: AuthLayout,
+        children: [
+            {path: '', component: GoogleCallback}
         ]
     },
     {
