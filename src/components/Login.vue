@@ -42,6 +42,7 @@
 <script>
     import axios from "axios";
     import {authService} from "@/services/auth.service";
+    import {handleBackendError} from "@/services/error.service";
 
     export default {
         name: 'LoginItem',
@@ -80,7 +81,10 @@
                     window.location.href = authUrl;
                 } catch (error) {
                     console.error('Google OAuth initialization error:', error);
-                    alert('Failed to initialize Google login: ' + (error.message || 'Unknown error'));
+
+                    // Обрабатываем ошибку с учетом кода от бэкенда
+                    const errorMessage = handleBackendError(error);
+                    alert('Ошибка инициализации Google авторизации: ' + errorMessage);
                     this.isGoogleLoading = false;
                 }
             }

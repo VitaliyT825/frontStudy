@@ -25,7 +25,13 @@ axios.interceptors.response.use(
         }
 
         if (data.code !== 0) {
-            return Promise.reject(data.message);
+            // Передаем полный объект ошибки с кодом и сообщением
+            return Promise.reject({
+                code: data.code,
+                message: data.message,
+                textCode: data.textCode,
+                data: data.data,
+            });
         }
 
         return data;
@@ -43,8 +49,19 @@ axios.interceptors.response.use(
             throw new Error(error);
         }
 
+        // Если есть response с данными от бэкенда (ошибка с кодом)
+        if (error.response && error.response.data) {
+            const { code, message, textCode, data } = error.response.data;
+            return Promise.reject({
+                code: code || 2000,
+                message: message || 'Произошла ошибка',
+                textCode: textCode,
+                data: data,
+            });
+        }
+
         // await axios.post('logout');
 
-        return Promise.reject(error.message);
+        return Promise.reject(error.message || 'Произошла ошибка при выполнении запроса');
     }
 );

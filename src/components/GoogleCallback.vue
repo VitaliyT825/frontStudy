@@ -11,6 +11,7 @@
 
 <script>
 import { authService } from "@/services/auth.service";
+import { handleBackendError } from "@/services/error.service";
 
 export default {
     name: 'GoogleCallback',
@@ -22,7 +23,7 @@ export default {
             const state = urlParams.get('state');
 
             if (!code || !state) {
-                throw new Error('Missing code or state parameter');
+                throw new Error('Отсутствуют обязательные параметры авторизации');
             }
 
             // Отправляем на бэкенд для обмена на токен
@@ -35,7 +36,11 @@ export default {
             await this.$router.push('/prices');
         } catch (error) {
             console.error('Google OAuth error:', error);
-            alert('Authentication failed: ' + (error.message || 'Unknown error'));
+
+            // Обрабатываем ошибку с учетом кода от бэкенда
+            const errorMessage = handleBackendError(error);
+            alert('Ошибка авторизации: ' + errorMessage);
+
             await this.$router.push('/login');
         }
     }
